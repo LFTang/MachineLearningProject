@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Machine Learning Project by LFTang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Machine Learning Project</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/LFTang/MachineLearningProject" class="btn">View on GitHub</a>
+      <a href="https://github.com/LFTang/MachineLearningProject/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/LFTang/MachineLearningProject/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p>&lt;!DOCTYPE html&gt;</p>
+
+<p></p>
+
+<p></p>
+
+<p>
+
+</p>
+
+<p></p>
+
+<p></p>
+
+<p></p>Machin Learning Project
+
+
+
+<p>
+</p>
+
+
+
+
+
+
+
+code{white-space: pre;}
+
+<p></p>
+
+
+
+
+  pre:not([class]) {
+    background-color: white;
+  }
+
+
+
+
+<p></p>
+
+<p></p>
+
+
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+
+
+<div>
+
+
+<div id="header">
+<h1>
+<a id="machin-learning-project" class="anchor" href="#machin-learning-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Machin Learning Project</h1>
+<h4>
+<a id="lingfei-tang" class="anchor" href="#lingfei-tang" aria-hidden="true"><span class="octicon octicon-link"></span></a><em>Lingfei Tang</em>
+</h4>
+<h4>
+<a id="december-27-2015" class="anchor" href="#december-27-2015" aria-hidden="true"><span class="octicon octicon-link"></span></a><em>December 27, 2015</em>
+</h4>
+</div>
+
+<div id="overview">
+<h1>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h1>
+<p>The current project uses a movement dataset to predict exercise category. We used a random forest model and applied a 10 fold cross validation. The result showed less than 1% of prediction error rate. Comparing with other methods, random forest showed higher overall accuracy.</p>
+<pre><code>library(caret)</code></pre>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2</code></pre>
+<pre><code>#Data import and cleaning
+trainActivity &lt;- read.csv("pml-training.csv",na.strings=c("", "NA"), header=TRUE)
+trainActivity &lt;- trainActivity[trainActivity$new_window=="no",]
+trainActivity &lt;- trainActivity[, colSums(is.na(trainActivity)) == 0]
+trainActivity &lt;- subset(trainActivity, select = roll_belt:classe)
+
+#Correlation Matrix
+ M &lt;- cor(trainActivity[, -53])
+ M8 &lt;- M
+ M8[abs(M8) &lt; .8] &lt;- 0
+ corrplot::corrplot(M8, method="color", col=colorRampPalette(c("blue","white","red"))(20))</code></pre>
+<p><img title alt width="672"></p>
+<pre><code># preObj &lt;- preProcess(trainActivity[,-53],method=c("center","scale"))
+# trainActivity.preProc &lt;- predict(preObj, trainActivity)
+
+set.seed(123)
+modFitLDA &lt;- train(classe~., method="lda", data=trainActivity) #Use all dataset: accuracy rate = .7</code></pre>
+<pre><code>## Loading required package: MASS</code></pre>
+<pre><code>print(modFitLDA)</code></pre>
+<pre><code>## Linear Discriminant Analysis 
+## 
+## 19216 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 19216, 19216, 19216, 19216, 19216, 19216, ... 
+## Resampling results
+## 
+##   Accuracy   Kappa      Accuracy SD  Kappa SD   
+##   0.7008249  0.6212092  0.005530633  0.006861474
+## 
+## </code></pre>
+<pre><code>modFitTree &lt;- train(classe~., method="rpart", data=trainActivity) #Use all dataset: accuracy rate = .5</code></pre>
+<pre><code>## Loading required package: rpart</code></pre>
+<pre><code>print(modFitTree)</code></pre>
+<pre><code>## CART 
+## 
+## 19216 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 19216, 19216, 19216, 19216, 19216, 19216, ... 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa       Accuracy SD  Kappa SD  
+##   0.03572208  0.5068964  0.35819526  0.02518400   0.03953664
+##   0.06004608  0.4271194  0.22698048  0.06528173   0.10907291
+##   0.11465988  0.3289478  0.06810937  0.04108587   0.06167991
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.03572208.</code></pre>
+<pre><code>#multiple cores support
+library(doParallel)</code></pre>
+<pre><code>## Loading required package: foreach
+## Loading required package: iterators
+## Loading required package: parallel</code></pre>
+<pre><code>cl &lt;- makeCluster(4)
+registerDoParallel(cl)
+
+#define k folds and n cases in each fold
+k=10
+n &lt;- floor(nrow(trainActivity)/k)
+folds &lt;- createFolds(trainActivity$classe, k=k)
+
+#train and cross-validate
+library(foreach); library(verification); library(randomForest)</code></pre>
+<pre><code>## Loading required package: fields
+## Loading required package: spam
+## Loading required package: grid
+## Spam version 1.3-0 (2015-10-24) is loaded.
+## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+## and overview of this package.
+## Help for individual functions is also obtained by adding the
+## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
+## 
+## Attaching package: 'spam'
+## 
+## The following objects are masked from 'package:base':
+## 
+##     backsolve, forwardsolve
+## 
+## Loading required package: maps
+## 
+##  # ATTENTION: maps v3.0 has an updated 'world' map.        #
+##  # Many country borders and names have changed since 1990. #
+##  # Type '?world' or 'news(package="maps")'. See README_v3. #
+## 
+## 
+## Loading required package: boot
+## 
+## Attaching package: 'boot'
+## 
+## The following object is masked from 'package:lattice':
+## 
+##     melanoma
+## 
+## Loading required package: CircStats
+## Loading required package: dtw
+## Loading required package: proxy
+## 
+## Attaching package: 'proxy'
+## 
+## The following object is masked from 'package:spam':
+## 
+##     as.matrix
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     as.dist, dist
+## 
+## The following object is masked from 'package:base':
+## 
+##     as.matrix
+## 
+## Loaded dtw v1.18-1. See ?dtw for help, citation("dtw") for use in publication.
+## 
+## randomForest 4.6-12
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre><code>set.seed(123)
+acc.vect = numeric(k) #error rate
+for (i in 1:length(folds)) {
+  #sample k folds
+  subTrain &lt;- trainActivity[-folds[[i]],] #training subset
+  subTest &lt;-  trainActivity[folds[[i]],]
+  modFitRF &lt;- foreach(ntree=rep(25000,6), .combine=combine, .multicombine=TRUE,
+                           .packages='randomForest') %dopar% {
+                             randomForest(classe~., data=subTrain)
+                           }
+  subPredict &lt;-  predict(modFitRF, subTest)
+  
+  acc.vect[i] = sum(subTest$classe == subPredict)/length(subPredict)
+  print(paste("Accuracy rate for fold ", i, ": ", acc.vect[i]))
+}</code></pre>
+<pre><code>## [1] "Accuracy rate for fold  1 :  0.998438313378449"
+## [1] "Accuracy rate for fold  2 :  0.997398543184183"
+## [1] "Accuracy rate for fold  3 :  0.99531737773153"
+## [1] "Accuracy rate for fold  4 :  0.99687825182102"
+## [1] "Accuracy rate for fold  5 :  0.992715920915713"
+## [1] "Accuracy rate for fold  6 :  0.998438313378449"
+## [1] "Accuracy rate for fold  7 :  0.997397188964081"
+## [1] "Accuracy rate for fold  8 :  0.995837669094693"
+## [1] "Accuracy rate for fold  9 :  0.99687825182102"
+## [1] "Accuracy rate for fold  10 :  0.997397188964081"</code></pre>
+<pre><code>print(paste("Average accuracy rate:", mean(acc.vect)))</code></pre>
+<pre><code>## [1] "Average accuracy rate: 0.996669701925322"</code></pre>
+<pre><code>stopCluster(cl)
+
+
+#predict testing data
+testActivity &lt;- read.csv("pml-testing.csv",na.strings=c("", "NA"), header=TRUE)
+testActivity &lt;- testActivity[, colSums(is.na(testActivity)) == 0]
+testActivity &lt;- subset(testActivity, select = roll_belt:problem_id)
+
+answers &lt;- predict(modFitRF, testActivity)
+
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}</code></pre>
+</div>
+
+<p></p>
+</div>
+
+
+
+
+
+
+
+<p>
+</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/LFTang/MachineLearningProject">Machine Learning Project</a> is maintained by <a href="https://github.com/LFTang">LFTang</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
