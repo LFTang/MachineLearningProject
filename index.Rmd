@@ -1,0 +1,113 @@
+---
+title: "Machin Learning Project"
+author: "Lingfei Tang"
+date: "December 27, 2015"
+output: html_document
+---
+
+# Overview
+The current project uses a movement dataset (http://groupware.les.inf.puc-rio.br/har) to predict exercise category. We used a random forest model and applied a 10 fold cross-validation technique. Comparing with other methods, the random forest model showed high overall accuracy, with more than 99.9% of prediction success (<.1% error rate).
+
+# Data Importing and Cleaning
+We first imported the dataset and performed simple data cleaning steps to exclude NA values and empty columns. We verified that there were no zero variance variables.
+
+```{r echo=FALSE}
+library(caret)
+#Data importing and cleaning
+trainActivity <- read.csv("pml-training.csv",na.strings=c("", "NA"), header=TRUE)
+trainActivity <- trainActivity[trainActivity$new_window=="no",]
+trainActivity <- trainActivity[, colSums(is.na(trainActivity)) == 0]
+trainActivity <- subset(trainActivity, select = roll_belt:classe)
+nzv <- nearZeroVar(trainActivity, saveMetrics = T)
+```
+```{r}
+print(paste("Number of near zero variance variables is ", sum(nzv$nzv)))
+```
+
+To determine if many variables are highly correlated, we plotted the correlation matrix for all the predictors in the dataset. The following figure shows that there are few variables that are highly correlated (r > .8). Given the small number of the highly correlated cases, we included all the predictors in the machine learning algorithm.
+
+```{r}
+#Correlation Matrix
+ M <- cor(trainActivity[, -53])
+ M8 <- M
+ M8[abs(M8) < .8] <- 0
+ corrplot::corrplot(M8, method="color", col=colorRampPalette(c("blue","white","red"))(20))
+```
+
+# Model Selection
+
+As an exploratory analysis to determine the best model for the analysis, we first conducted a linear discriminant analysis (LDA) and a tree model (rpart) analysis to compare their accuracies. The result showed that both models had lower than .8 accuracy.
+
+```{r}
+set.seed(123)
+inTrain <- createDataPartition(trainActivity$classe, p = .6, list=FALSE)
+modFitLDA <- train(classe~., method="lda", data=trainActivity[inTrain,]) #Accuracy rate = .7
+print(modFitLDA)
+modFitTree <- train(classe~., method="rpart", data=trainActivity[inTrain,]) #Accuracy rate = .5
+print(modFitTree)
+```
+
+Random forest model is a non-parametric model that offers high accuracy for model prediction, but does not assume normality on the predictors. This model is suitable to predict categorical data, as the class variable for this movement dataset. Initial testing of the model showed higher than .8 accuracy rate for the same training data (code ommited due to long processing time). In the following chapter, we adopted a random forest model. 
+
+# Training and Cross-validation
+
+To reduce the bias of the model, we applied a 10 fold cross-validation technique. We trained the model based on 9 of the 10 folds in the dataset, and tested the model based on the remaning fold of the dataset. Given the computational intensity of fitting a random forest model, we used parallel processing to speed up the model training process.
+
+```{r echo=FALSE}
+#Open multiple clusters for parallel processing
+library(doParallel)
+```
+```{r}
+cl <- makeCluster(4)
+registerDoParallel(cl)
+
+#Create k data folds
+k=10
+folds <- createFolds(trainActivity$classe, k=k)
+
+#Train and cross validate
+library(foreach); library(verification); library(randomForest)
+set.seed(123)
+acc.vect = numeric(k) # initialize accracy rate 
+for (i in 1:length(folds)) {
+  #sample k folds
+  subTrain <- trainActivity[-folds[[i]],] #training subset
+  subTest <-  trainActivity[folds[[i]],]  #testing subset
+  #Fit the training subset using random forest model (parallel proessing)
+  modFitRF <- foreach(ntree=rep(25000,6), .combine=combine, .multicombine=TRUE,
+                           .packages='randomForest') %dopar% {
+                             randomForest(classe~., data=subTrain)
+                           }
+  #Predict the test subset
+  subPredict <-  predict(modFitRF, subTest)
+  acc.vect[i] = sum(subTest$classe == subPredict)/length(subPredict)
+  print(paste("Accuracy rate for fold ", i, ": ", round(acc.vect[i],2)))
+}
+ 
+print(paste("Average accuracy rate:", mean(acc.vect, na.rm=T)))
+stopCluster(cl) #Stop parallel clusters
+```
+
+# Model Prediction
+
+We applied similar data cleaning techniques on the testing data (20 data points). Then we applied the fitted random forest model to the testing data to predict exercise category. The predictions were stored into a variable and then exported to 20 separate text files. These files were submitted to the course website and achieved 20/20 accuracy.
+
+```{r}
+#Predict testing data
+testActivity <- read.csv("pml-testing.csv",na.strings=c("", "NA"), header=TRUE)
+testActivity <- testActivity[, colSums(is.na(testActivity)) == 0]
+testActivity <- subset(testActivity, select = roll_belt:problem_id)
+
+#Output answers to a variable
+answers <- predict(modFitRF, testActivity)
+
+#Function to export answers
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+```
