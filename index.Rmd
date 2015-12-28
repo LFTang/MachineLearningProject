@@ -7,11 +7,19 @@ output: html_document
 
 # Overview
 The current project uses a movement dataset (http://groupware.les.inf.puc-rio.br/har) to predict exercise category. We used a random forest model and applied a 10 fold cross-validation technique. Comparing with other methods, the random forest model showed high overall accuracy, with more than 99.9% of prediction success (<.1% error rate).
+<<<<<<< HEAD
 
 # Data Importing and Cleaning
 We first imported the dataset and performed simple data cleaning steps to exclude NA values and empty columns. We verified that there were no zero variance variables.
 
 ```{r echo=FALSE}
+=======
+
+# Data Importing and Cleaning
+We first imported the dataset and performed simple data cleaning steps to exclude NA values and empty columns. We verified that there were no zero variance variables.
+
+```{r}
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 library(caret)
 #Data importing and cleaning
 trainActivity <- read.csv("pml-training.csv",na.strings=c("", "NA"), header=TRUE)
@@ -19,12 +27,19 @@ trainActivity <- trainActivity[trainActivity$new_window=="no",]
 trainActivity <- trainActivity[, colSums(is.na(trainActivity)) == 0]
 trainActivity <- subset(trainActivity, select = roll_belt:classe)
 nzv <- nearZeroVar(trainActivity, saveMetrics = T)
+<<<<<<< HEAD
 ```
 ```{r}
 print(paste("Number of near zero variance variables is ", sum(nzv$nzv)))
 ```
 
 To determine if many variables are highly correlated, we plotted the correlation matrix for all the predictors in the dataset. The following figure shows that there are few variables that are highly correlated (r > .8). Given the small number of the highly correlated cases, we included all the predictors in the machine learning algorithm.
+=======
+print(paste("Number of near zero variance variables is ", sum(nzv$nzv)))
+```
+
+To determine if many variables were highly correlated, we plotted the correlation matrix for all the predictors in the dataset. The following figure shows that there were few variables that are highly correlated (r > .8). Given the small number of the highly correlated cases, we included all the predictors in the machine learning algorithm.
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 
 ```{r}
 #Correlation Matrix
@@ -33,6 +48,7 @@ To determine if many variables are highly correlated, we plotted the correlation
  M8[abs(M8) < .8] <- 0
  corrplot::corrplot(M8, method="color", col=colorRampPalette(c("blue","white","red"))(20))
 ```
+<<<<<<< HEAD
 
 # Model Selection
 
@@ -54,6 +70,29 @@ Random forest model is a non-parametric model that offers high accuracy for mode
 To reduce the bias of the model, we applied a 10 fold cross-validation technique. We trained the model based on 9 of the 10 folds in the dataset, and tested the model based on the remaning fold of the dataset. Given the computational intensity of fitting a random forest model, we used parallel processing to speed up the model training process.
 
 ```{r echo=FALSE}
+=======
+
+# Model Selection
+
+As an exploratory analysis to determine the best model for the analysis, we first conducted a linear discriminant analysis (LDA) and a tree model (rpart) analysis to compare their accuracies. The result showed that both models had lower than .8 accuracy.
+
+```{r}
+set.seed(123)
+inTrain <- createDataPartition(trainActivity$classe, p = .6, list=FALSE)
+modFitLDA <- train(classe~., method="lda", data=trainActivity[inTrain,]) #Use all dataset: accuracy rate = .7
+print(modFitLDA)
+modFitTree <- train(classe~., method="rpart", data=trainActivity[inTrain,]) #Use all dataset: accuracy rate = .5
+print(modFitTree)
+```
+
+Random forest model is a non-parametric model that offers high accuracy for model prediction, but does not assume normality on the predictors. This model is suitable to predict categorical data, as the class variable for this movement dataset. Initial testing of the model showed higher than .8 accuracy rate for the same training data (code ommited due to long processing time). We thus adopted a random forest model. 
+
+# Training and Cross-validation
+
+To reduce the bias of the model, we applied a 10 fold cross-validation technique. We trained the model based on 9 of the 10 folds in the dataset, and tested the model based on the remaning fold of the dataset. Given the computational intensity of fitting a random forest model, we used parallel processing to speed up the model training process.
+
+```{r}
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 #Open multiple clusters for parallel processing
 library(doParallel)
 ```
@@ -72,8 +111,13 @@ acc.vect = numeric(k) # initialize accracy rate
 for (i in 1:length(folds)) {
   #sample k folds
   subTrain <- trainActivity[-folds[[i]],] #training subset
+<<<<<<< HEAD
   subTest <-  trainActivity[folds[[i]],]  #testing subset
   #Fit the training subset using random forest model (parallel proessing)
+=======
+  subTest <-  trainActivity[folds[[i]],]
+  #Fit random forest with parallel proessing using the training subset
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
   modFitRF <- foreach(ntree=rep(25000,6), .combine=combine, .multicombine=TRUE,
                            .packages='randomForest') %dopar% {
                              randomForest(classe~., data=subTrain)
@@ -81,17 +125,29 @@ for (i in 1:length(folds)) {
   #Predict the test subset
   subPredict <-  predict(modFitRF, subTest)
   acc.vect[i] = sum(subTest$classe == subPredict)/length(subPredict)
+<<<<<<< HEAD
   print(paste("Accuracy rate for fold ", i, ": ", round(acc.vect[i],2)))
+=======
+  print(paste("Accuracy rate for fold ", i, ": ", round(acc.vect[i]),2))
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 }
  
 print(paste("Average accuracy rate:", mean(acc.vect, na.rm=T)))
 stopCluster(cl) #Stop parallel clusters
 ```
+<<<<<<< HEAD
 
 # Model Prediction
 
 We applied similar data cleaning techniques on the testing data (20 data points). Then we applied the fitted random forest model to the testing data to predict exercise category. The predictions were stored into a variable and then exported to 20 separate text files. These files were submitted to the course website and achieved 20/20 accuracy.
 
+=======
+
+# Model Prediction
+
+We applied similar data cleaning techniques on the testing data (20 data points). Then we applied the fitted random forest model to the testing data to predict exercise category. The predictions were stored into a variable and then exported to 20 separate text files. These files were submitted to Coursera and achieved 20/20 accuracy.
+
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 ```{r}
 #Predict testing data
 testActivity <- read.csv("pml-testing.csv",na.strings=c("", "NA"), header=TRUE)

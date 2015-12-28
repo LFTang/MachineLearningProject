@@ -75,11 +75,26 @@ img {
 <div id="data-importing-and-cleaning" class="section level1">
 <h1>Data Importing and Cleaning</h1>
 <p>We first imported the dataset and performed simple data cleaning steps to exclude NA values and empty columns. We verified that there were no zero variance variables.</p>
+<<<<<<< HEAD
 <pre><code>## Loading required package: lattice
 ## Loading required package: ggplot2</code></pre>
 <pre class="r"><code>print(paste(&quot;Number of near zero variance variables is &quot;, sum(nzv$nzv)))</code></pre>
 <pre><code>## [1] &quot;Number of near zero variance variables is  0&quot;</code></pre>
 <p>To determine if many variables are highly correlated, we plotted the correlation matrix for all the predictors in the dataset. The following figure shows that there are few variables that are highly correlated (r &gt; .8). Given the small number of the highly correlated cases, we included all the predictors in the machine learning algorithm.</p>
+=======
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>#Data importing and cleaning
+trainActivity &lt;- read.csv(&quot;pml-training.csv&quot;,na.strings=c(&quot;&quot;, &quot;NA&quot;), header=TRUE)
+trainActivity &lt;- trainActivity[trainActivity$new_window==&quot;no&quot;,]
+trainActivity &lt;- trainActivity[, colSums(is.na(trainActivity)) == 0]
+trainActivity &lt;- subset(trainActivity, select = roll_belt:classe)
+nzv &lt;- nearZeroVar(trainActivity, saveMetrics = T)
+print(paste(&quot;Number of near zero variance variables is &quot;, sum(nzv$nzv)))</code></pre>
+<pre><code>## [1] &quot;Number of near zero variance variables is  0&quot;</code></pre>
+<p>To determine if many variables were highly correlated, we plotted the correlation matrix for all the predictors in the dataset. The following figure shows that there were few variables that are highly correlated (r &gt; .8). Given the small number of the highly correlated cases, we included all the predictors in the machine learning algorithm.</p>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre class="r"><code>#Correlation Matrix
  M &lt;- cor(trainActivity[, -53])
  M8 &lt;- M
@@ -92,7 +107,11 @@ img {
 <p>As an exploratory analysis to determine the best model for the analysis, we first conducted a linear discriminant analysis (LDA) and a tree model (rpart) analysis to compare their accuracies. The result showed that both models had lower than .8 accuracy.</p>
 <pre class="r"><code>set.seed(123)
 inTrain &lt;- createDataPartition(trainActivity$classe, p = .6, list=FALSE)
+<<<<<<< HEAD
 modFitLDA &lt;- train(classe~., method=&quot;lda&quot;, data=trainActivity[inTrain,]) #Accuracy rate = .7</code></pre>
+=======
+modFitLDA &lt;- train(classe~., method=&quot;lda&quot;, data=trainActivity[inTrain,]) #Use all dataset: accuracy rate = .7</code></pre>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre><code>## Loading required package: MASS</code></pre>
 <pre class="r"><code>print(modFitLDA)</code></pre>
 <pre><code>## Linear Discriminant Analysis 
@@ -110,7 +129,11 @@ modFitLDA &lt;- train(classe~., method=&quot;lda&quot;, data=trainActivity[inTra
 ##   0.7002661  0.6205553  0.006345211  0.007885237
 ## 
 ## </code></pre>
+<<<<<<< HEAD
 <pre class="r"><code>modFitTree &lt;- train(classe~., method=&quot;rpart&quot;, data=trainActivity[inTrain,]) #Accuracy rate = .5</code></pre>
+=======
+<pre class="r"><code>modFitTree &lt;- train(classe~., method=&quot;rpart&quot;, data=trainActivity[inTrain,]) #Use all dataset: accuracy rate = .5</code></pre>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre><code>## Loading required package: rpart</code></pre>
 <pre class="r"><code>print(modFitTree)</code></pre>
 <pre><code>## CART 
@@ -131,11 +154,20 @@ modFitLDA &lt;- train(classe~., method=&quot;lda&quot;, data=trainActivity[inTra
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final value used for the model was cp = 0.03624682.</code></pre>
+<<<<<<< HEAD
 <p>Random forest model is a non-parametric model that offers high accuracy for model prediction, but does not assume normality on the predictors. This model is suitable to predict categorical data, as the class variable for this movement dataset. Initial testing of the model showed higher than .8 accuracy rate for the same training data (code ommited due to long processing time). In the following chapter, we adopted a random forest model.</p>
+=======
+<p>Random forest model is a non-parametric model that offers high accuracy for model prediction, but does not assume normality on the predictors. This model is suitable to predict categorical data, as the class variable for this movement dataset. Initial testing of the model showed higher than .8 accuracy rate for the same training data (code ommited due to long processing time). We thus adopted a random forest model.</p>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 </div>
 <div id="training-and-cross-validation" class="section level1">
 <h1>Training and Cross-validation</h1>
 <p>To reduce the bias of the model, we applied a 10 fold cross-validation technique. We trained the model based on 9 of the 10 folds in the dataset, and tested the model based on the remaning fold of the dataset. Given the computational intensity of fitting a random forest model, we used parallel processing to speed up the model training process.</p>
+<<<<<<< HEAD
+=======
+<pre class="r"><code>#Open multiple clusters for parallel processing
+library(doParallel)</code></pre>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre><code>## Loading required package: foreach
 ## Loading required package: iterators
 ## Loading required package: parallel</code></pre>
@@ -205,8 +237,13 @@ acc.vect = numeric(k) # initialize accracy rate
 for (i in 1:length(folds)) {
   #sample k folds
   subTrain &lt;- trainActivity[-folds[[i]],] #training subset
+<<<<<<< HEAD
   subTest &lt;-  trainActivity[folds[[i]],]  #testing subset
   #Fit the training subset using random forest model (parallel proessing)
+=======
+  subTest &lt;-  trainActivity[folds[[i]],]
+  #Fit random forest with parallel proessing using the training subset
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
   modFitRF &lt;- foreach(ntree=rep(25000,6), .combine=combine, .multicombine=TRUE,
                            .packages='randomForest') %dopar% {
                              randomForest(classe~., data=subTrain)
@@ -214,6 +251,7 @@ for (i in 1:length(folds)) {
   #Predict the test subset
   subPredict &lt;-  predict(modFitRF, subTest)
   acc.vect[i] = sum(subTest$classe == subPredict)/length(subPredict)
+<<<<<<< HEAD
   print(paste(&quot;Accuracy rate for fold &quot;, i, &quot;: &quot;, round(acc.vect[i],2)))
 }</code></pre>
 <pre><code>## [1] &quot;Accuracy rate for fold  1 :  1&quot;
@@ -226,13 +264,31 @@ for (i in 1:length(folds)) {
 ## [1] &quot;Accuracy rate for fold  8 :  1&quot;
 ## [1] &quot;Accuracy rate for fold  9 :  1&quot;
 ## [1] &quot;Accuracy rate for fold  10 :  0.99&quot;</code></pre>
+=======
+  print(paste(&quot;Accuracy rate for fold &quot;, i, &quot;: &quot;, round(acc.vect[i]),2))
+}</code></pre>
+<pre><code>## [1] &quot;Accuracy rate for fold  1 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  2 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  3 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  4 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  5 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  6 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  7 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  8 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  9 :  1 2&quot;
+## [1] &quot;Accuracy rate for fold  10 :  1 2&quot;</code></pre>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre class="r"><code>print(paste(&quot;Average accuracy rate:&quot;, mean(acc.vect, na.rm=T)))</code></pre>
 <pre><code>## [1] &quot;Average accuracy rate: 0.996721433133216&quot;</code></pre>
 <pre class="r"><code>stopCluster(cl) #Stop parallel clusters</code></pre>
 </div>
 <div id="model-prediction" class="section level1">
 <h1>Model Prediction</h1>
+<<<<<<< HEAD
 <p>We applied similar data cleaning techniques on the testing data (20 data points). Then we applied the fitted random forest model to the testing data to predict exercise category. The predictions were stored into a variable and then exported to 20 separate text files. These files were submitted to the course website and achieved 20/20 accuracy.</p>
+=======
+<p>We applied similar data cleaning techniques on the testing data (20 data points). Then we applied the fitted random forest model to the testing data to predict exercise category. The predictions were stored into a variable and then exported to 20 separate text files. These files were submitted to Coursera and achieved 20/20 accuracy.</p>
+>>>>>>> 93f1d798b663e311fd025ebab49994e7f71ebd65
 <pre class="r"><code>#Predict testing data
 testActivity &lt;- read.csv(&quot;pml-testing.csv&quot;,na.strings=c(&quot;&quot;, &quot;NA&quot;), header=TRUE)
 testActivity &lt;- testActivity[, colSums(is.na(testActivity)) == 0]
