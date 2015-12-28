@@ -2,7 +2,9 @@
 title: "Machin Learning Project"
 author: "Lingfei Tang"
 date: "December 27, 2015"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 # Overview
